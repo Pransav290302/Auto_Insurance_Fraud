@@ -61,7 +61,7 @@ Use these settings (adjust if your repo name or branch is different):
 | Key | Value | Notes |
 |-----|--------|--------|
 | `SECRET_KEY` | A long random string | e.g. generate with `python -c "import secrets; print(secrets.token_hex(32))"` |
-| `PYTHON_VERSION` | `3.11` or `3.12` | Matches your local Python if possible |
+| `PYTHON_VERSION` | `3.11.9` (full version required) | Only if you set it: use major.minor.patch (e.g. `3.11.9`). Or omit and use `.python-version` in the repo. |
 
 Optional (for local-style debugging; **do not use in production**):
 
@@ -107,7 +107,7 @@ To use Option A:
 
 | Issue | What to do |
 |--------|------------|
-| Build fails | Check the **Build logs** for missing dependencies or wrong Python version. Ensure `requirements.txt` is in the repo and has no typos. |
+| Build fails | Check the **Build logs** for missing dependencies or wrong Python version. If you set `PYTHON_VERSION`, use full version (e.g. `3.11.9`). Ensure `requirements.txt` is in the repo and has no typos. |
 | App crashes at start | Check **Logs** for Python errors. Ensure `SECRET_KEY` is set and that the start command is `gunicorn app:app` (or `python app.py`). |
 | 503 / “Application failed to start” | Same as above; also confirm the app listens on `0.0.0.0` and uses the `PORT` env var (the app code already does this). |
 | Slow first request | Normal on free tier after idle spin-down; the instance is waking up. |
@@ -120,7 +120,7 @@ To use Option A:
 - [ ] Repo connected to Render and Web Service created.
 - [ ] Build command: `pip install -r requirements.txt`.
 - [ ] Start command: `gunicorn app:app` (or leave blank if using Procfile).
-- [ ] `SECRET_KEY` (and optionally `PYTHON_VERSION`) set in Environment.
+- [ ] `SECRET_KEY` (and optionally `PYTHON_VERSION` = full version e.g. `3.11.9`) set in Environment.
 - [ ] Default data/models in repo or plan to re-upload/re-train after deploy.
 
 After that, every push to the connected branch will trigger a new deploy on Render.
