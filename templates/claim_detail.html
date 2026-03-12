@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Claim #{{ claim.policy_number or claim.policy_id or claim._idx }}{% endblock %}
+{% block content %}
+<div class="detail-header">
+    <a href="{{ url_for('claims_list') }}" class="back-link">← Back to Claims</a>
+    <h1 class="page-title">Claim #{{ claim.policy_number or claim.policy_id or claim._idx }}</h1>
+    <p class="page-sub">Full incident and policy details. Fraud reported: <strong>{{ claim.fraud_reported|fraud_yes_no }}</strong> - Total claim: <strong>{{ claim.total_claim_amount|dollar }}</strong></p>
+</div>
+
+<div class="detail-grid">
+    <div class="card">
+        <h2>Policy &amp; insured</h2>
+        <dl class="detail-dl">
+            <dt>Policy number / ID</dt><dd>{{ claim.policy_number or claim.policy_id or '-' }}</dd>
+            <dt>Policy state</dt><dd>{{ claim.policy_state|default('-') }}</dd>
+            <dt>Policy CSL</dt><dd>{{ claim.policy_csl|default('-') }}</dd>
+            <dt>Deductible</dt><dd>{{ (claim.policy_deductible|default(claim.policy_deductable|default(0)))|dollar }}</dd>
+            <dt>Annual premium</dt><dd>{{ claim.policy_annual_premium|dollar }}</dd>
+            <dt>Months as customer</dt><dd>{{ claim.months_as_customer|default('-') }}</dd>
+            <dt>Age</dt><dd>{{ claim.age or claim.insured_age|default('-') }}</dd>
+            <dt>Insured sex</dt><dd>{{ claim.insured_sex|default('-') }}</dd>
+            <dt>Education</dt><dd>{{ claim.insured_education_level|default('-') }}</dd>
+            <dt>Occupation</dt><dd>{{ claim.insured_occupation|default('-') }}</dd>
+            <dt>Relationship</dt><dd>{{ claim.insured_relationship|default('-') }}</dd>
+        </dl>
+    </div>
+    <div class="card">
+        <h2>Incident</h2>
+        <dl class="detail-dl">
+            <dt>Incident type</dt><dd>{{ claim.incident_type|default('-') }}</dd>
+            <dt>Collision type</dt><dd>{{ claim.collision_type|default('-') }}</dd>
+            <dt>Severity</dt><dd>{{ claim.incident_severity|default('-') }}</dd>
+            <dt>State</dt><dd>{{ claim.incident_state|default('-') }}</dd>
+            <dt>City</dt><dd>{{ claim.incident_city|default('-') }}</dd>
+            <dt>Hour of day</dt><dd>{{ claim.incident_hour_of_the_day|default('-') }}</dd>
+            <dt>Vehicles involved</dt><dd>{{ claim.number_of_vehicles_involved|default('-') }}</dd>
+            <dt>Property damage</dt><dd>{{ claim.property_damage|default('-') }}</dd>
+            <dt>Bodily injuries</dt><dd>{{ claim.bodily_injuries|default('-') }}</dd>
+            <dt>Witnesses</dt><dd>{{ claim.witnesses|default('-') }}</dd>
+            <dt>Police report</dt><dd>{{ claim.police_report_available|default('-') }}</dd>
+            <dt>Authorities contacted</dt><dd>{{ claim.authorities_contacted|default('-') }}</dd>
+        </dl>
+    </div>
+    <div class="card">
+        <h2>Vehicle</h2>
+        <dl class="detail-dl">
+            <dt>Make</dt><dd>{{ claim.auto_make|default('-') }}</dd>
+            <dt>Model</dt><dd>{{ claim.auto_model|default('-') }}</dd>
+            <dt>Year</dt><dd>{{ claim.auto_year|default('-') }}</dd>
+        </dl>
+    </div>
+    <div class="card highlight-card">
+        <h2>Claim amounts &amp; fraud</h2>
+        <dl class="detail-dl">
+            <dt>Fraud reported</dt><dd><span class="badge badge-{{ 'danger' if claim.fraud_reported == 'Y' else 'success' }}">{{ claim.fraud_reported|fraud_yes_no }}</span></dd>
+            <dt>Total claim amount</dt><dd class="amount">{{ claim.total_claim_amount|dollar }}</dd>
+            <dt>Injury claim</dt><dd>{{ claim.injury_claim|default(0)|dollar }}</dd>
+            <dt>Property claim</dt><dd>{{ claim.property_claim|default(0)|dollar }}</dd>
+            <dt>Vehicle claim</dt><dd>{{ claim.vehicle_claim|default(0)|dollar }}</dd>
+        </dl>
+    </div>
+</div>
+<style>
+    .detail-header { margin-bottom: 1.5rem; }
+    .back-link { color: var(--accent2); text-decoration: none; font-weight: 500; display: inline-block; margin-bottom: 0.5rem; }
+    .back-link:hover { text-decoration: underline; }
+    .detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; }
+    .detail-dl { margin: 0; font-size: 0.95rem; }
+    .detail-dl dt { color: var(--text-muted); font-weight: 500; margin-top: 0.6rem; margin-bottom: 0.2rem; }
+    .detail-dl dt:first-child { margin-top: 0; }
+    .detail-dl dd { margin: 0; color: var(--text); }
+    .detail-dl dd.amount { font-size: 1.25rem; font-weight: 700; color: var(--accent2); }
+    .highlight-card { border-left: 4px solid var(--accent); }
+    .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 6px; font-weight: 600; font-size: 0.85rem; }
+    .badge-danger { background: #fef2f2; color: var(--danger); }
+    .badge-success { background: #f0fdf4; color: var(--success); }
+</style>
+{% endblock %}

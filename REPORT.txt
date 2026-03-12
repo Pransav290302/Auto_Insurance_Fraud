@@ -1,0 +1,136 @@
+================================================================================
+PROJECT REPORT
+Auto Insurance Claims Fraud Detection and Loss Severity Prediction using ML
+================================================================================
+
+1. INTRODUCTION
+--------------------------------------------------------------------------------
+This report describes a machine learning project for the auto insurance domain. The project builds a single system that (1) detects whether an insurance claim is fraudulent or legitimate, and (2) predicts the financial amount of the claim (loss severity). The work uses the dataset insurance_claims_fraud.csv and is implemented as an ML pipeline plus a web application so that users can upload data, view statistics, and obtain predictions. The report covers the problem context, dataset, algorithms, methodology, implementation, and conclusions.
+
+
+2. BACKGROUND AND PROBLEM STATEMENT
+--------------------------------------------------------------------------------
+Auto insurers handle large numbers of claims every year. Fraudulent or inflated claims cause significant losses, while accurate prediction of claim amounts is needed for reserves and pricing. Manual review is slow, costly, and hard to scale. This project addresses both issues by using supervised machine learning: we train models on historical data with known fraud labels and claim amounts, then use those models to classify new claims (fraud or not) and to predict claim amount (regression). The goal is one integrated pipeline that supports both tasks and can be used through a simple web interface.
+
+
+3. OBJECTIVES
+--------------------------------------------------------------------------------
+- To classify auto insurance claims as fraudulent or legitimate using multiple algorithms and to select the best model for deployment.
+- To predict the loss severity (total claim amount in dollars) using regression and to select the best model.
+- To handle class imbalance in fraud (minority class) using SMOTE.
+- To provide a web app for dataset upload, dashboard statistics, claims list (search, sort, click to detail), single-claim prediction, and dataset browsing, with consistent display (fraud as Yes/No, amounts in dollars) and a premium user experience.
+- To document the algorithms, code, and evaluation in a clear report from introduction to conclusion.
+
+
+4. DATASET
+--------------------------------------------------------------------------------
+Source: insurance_claims_fraud.csv (placed in the project folder or uploaded via the app).
+
+Content: Auto insurance claim records with policy, vehicle, incident, and claim-related fields. The dataset has on the order of 10,000 or more rows.
+
+Target variables:
+  - fraud_reported: Binary (Y/N or 0/1). This is the classification target for fraud detection.
+  - total_claim_amount: Continuous value in dollars. This is the regression target for loss severity prediction.
+
+Feature variables (as per project proposal): Policy and insured (e.g. months_as_customer, age, policy_state, policy_csl, policy_deductable, policy_annual_premium, umbrella_limit, insured_zip, insured_sex, education, occupation, hobbies, relationship, capital.gains, capital.loss); vehicle (auto_make, auto_model, auto_year); incident (e.g. incident_type, collision_type, incident_severity, authorities_contacted, incident_state, incident_city, incident_hour_of_the_day, number_of_vehicles_involved, property_damage, bodily_injuries, witnesses, police_report_available); claim components (injury_claim, property_claim, vehicle_claim). Identifiers and raw date/location fields such as policy_number, policy_bind_date, incident_date, and incident_location are excluded from the feature set.
+
+
+5. METHODOLOGY
+--------------------------------------------------------------------------------
+5.1 Approach
+The method is supervised learning. We have labelled data: each claim has a value for fraud_reported and for total_claim_amount. We learn to predict these from the other variables. For fraud we use binary classification; for severity we use regression.
+
+5.2 Data pipeline
+Data is loaded from CSV; unknown values ('?') are replaced with NaN. Categorical missing values are filled with the column mode; numeric with the column median. The fraud target is converted from Y/N to 1/0. Features are selected from the proposal variable list; categorical features are label-encoded and encoders are stored for use at prediction time. The data is split with stratification (80% train, 20% test) so that the proportion of fraud is similar in train and test.
+
+5.3 Fraud detection pipeline
+We use SMOTE on the training set only to oversample the minority (fraud) class. Four classifiers are trained: Random Forest, XGBoost, LightGBM, and Gradient Boosting. Each is evaluated on the test set using accuracy, precision, recall, F1-score, and ROC-AUC. The model with the highest F1-score is chosen as the fraud model and saved.
+
+5.4 Severity prediction pipeline
+Three regressors are trained on the same train/test split: Random Forest, XGBoost, and LightGBM. Each is evaluated using MAE, RMSE, and R-squared. The model with the highest R² is chosen as the severity model and saved.
+
+5.5 Algorithms (brief description)
+  - Random Forest (classification): Ensemble of decision trees; each tree votes; final prediction by majority. Used for fraud.
+  - XGBoost (classification): Gradient boosting; trees built sequentially to correct errors. Used for fraud.
+  - LightGBM (classification): Fast gradient boosting. Used for fraud.
+  - Gradient Boosting (classification): Sklearn sequential boosting. Used for fraud.
+  - Random Forest (regression): Ensemble of regression trees; output is average of tree predictions. Used for severity.
+  - XGBoost (regression): Gradient boosting for continuous target. Used for severity.
+  - LightGBM (regression): Fast gradient boosting for regression. Used for severity.
+  - SMOTE: Synthetic oversampling of the minority (fraud) class on the training set to improve recall.
+
+5.6 ML pipeline (tree structure)
+  ML Pipeline
+  |
+  +-- 1. Input
+  |       insurance_claims_fraud.csv
+  |
+  +-- 2. Load & Clean
+  |       fill missing (mode / median), replace "?"
+  |
+  +-- 3. Prepare Features
+  |       encode categorical, exclude policy_number/dates/location
+  |
+  +-- 4. Train/Test Split
+  |       80% train, 20% test (stratified)
+  |
+  +-- 5. Fraud Branch
+  |       +-- SMOTE on train (oversample fraud)
+  |       +-- Train: Random Forest, XGBoost, LightGBM, Gradient Boosting
+  |       +-- Pick best by F1  -->  fraud model
+  |
+  +-- 6. Severity Branch
+  |       +-- Train: Random Forest, XGBoost, LightGBM (regression)
+  |       +-- Pick best by R²  -->  severity model
+  |
+  +-- 7. Save
+  |       fraud_severity_models.pkl (best models + encoders)
+  |
+  +-- 8. Predict
+        new claim  -->  encode  -->  Fraud: Yes/No,  Amount: $ (dollars)
+
+
+6. IMPLEMENTATION
+--------------------------------------------------------------------------------
+6.1 Main code files (two files)
+  - app.py: Flask web application. Handles routes (login, register, dashboard, claims list, claim detail, upload, predict, dataset), user auth (SQLite), and calls ml_pipeline to load data and train/load models. Includes auto-install of packages from requirements.txt on startup (with retry if a module is missing). Template filters provide consistent display: dollar (amounts as $X,XXX.XX) and fraud_yes_no (fraud as Yes/No). This is the entry point: run "python app.py" in the project folder, then copy the link (e.g. http://127.0.0.1:5000) into your browser. Alternatively use Start_App.bat (Windows) or Start_App.command (Mac) to launch; HOW_TO_RUN.txt describes both options.
+  - ml_pipeline.py: All machine learning logic. Load data, prepare features, train fraud and severity models, run_full_pipeline, predict_from_store. app.py imports from this module; it does not contain the ML algorithms itself.
+
+6.2 ML pipeline (ml_pipeline.py)
+Main functions: load_and_clean_data (load and clean CSV); prepare_features (build X, y_fraud, y_amount, encoders); run_fraud_pipeline (SMOTE, train 4 classifiers, return best by F1 and metrics); run_severity_pipeline (train 3 regressors, return best by R² and metrics); run_full_pipeline (orchestrate load, prepare, split, both pipelines, and save model_store); predict_from_store (predict fraud and severity for one claim from saved artifact).
+
+6.3 Web application (app.py)
+The Flask app uses ml_pipeline for data loading and training. It serves:
+  - Login and register: User authentication with SQLite and hashed passwords. Buttons show "Signing in…" / "Creating account…" while submitting for clear feedback; redirect to dashboard after login.
+  - Dashboard: Dataset stats (total claims, fraud count, legitimate count, avg/min/max claim amount in dollars), model performance tables (best fraud and severity model names, all metrics), first 10 claims with Claim #, Age, Incident, State, Fraud (Yes/No), Amount ($), and links to full claim detail. Quick links to Upload, Claims, Predict, and raw Dataset.
+  - Claims: Paginated list (10 per page) with search (by policy number, incident type, state, city, etc.) and sort (by Claim #, Age, Incident, State, Fraud, Amount). Each row is clickable and opens the claim detail page. Fraud shown as Yes/No; amounts in dollars.
+  - Claim detail: Single page per claim showing Policy & insured, Incident (type, severity, state, city, vehicles, damage, witnesses, etc.), Vehicle (make, model, year), and Claim amounts & fraud. All amounts in dollars; fraud as Yes/No.
+  - Upload: CSV upload with on-submit feedback ("Uploading…" and message that processing may take a moment). After upload, user is redirected to dashboard; models retrain on next use.
+  - Predict: Form for claim details; result card shows Fraud (Yes or No) and Predicted amount in dollars in a consistent format every time.
+  - Dataset: Paginated raw table (50 per page) with dollar formatting for amounts and Yes/No for fraud.
+Models are loaded from fraud_severity_models.pkl if present; otherwise run_full_pipeline is called and the result is saved.
+
+6.4 Web app design and UX
+The interface uses a premium, high-end style: Inter font, subtle gradient background, sticky navbar with backdrop blur, card hover effects and shadows, smooth transitions, and clear focus states. Amounts are displayed with the dollar symbol ($) and two decimal places throughout; fraud is displayed as Yes or No (not Y/N or 1/0) for consistency. Login, register, and upload show loading states so users know the app is working; redirects after login, register, and upload are immediate to the correct page.
+
+6.5 Saved artifact
+fraud_severity_models.pkl stores the best fraud model, best severity model, feature names, train means, encoders, categorical column names, and metrics for all trained models. The app loads this file for fast prediction without retraining.
+
+
+7. EVALUATION AND RESULTS
+--------------------------------------------------------------------------------
+Fraud models are evaluated with accuracy, precision, recall, F1, and ROC-AUC; the best model is selected by F1. Severity models are evaluated with MAE, RMSE, and R²; the best is selected by R². The dashboard displays these metrics for all algorithms so users can see which model was chosen and how each performed. After the first run, the saved best models are used for all predictions until the dataset is replaced (e.g. via upload), at which point the pipeline can be run again to retrain and update the saved models.
+
+
+8. HOW TO RUN THE PROJECT
+--------------------------------------------------------------------------------
+The app can auto-install dependencies from requirements.txt on first run. Place insurance_claims_fraud.csv in the project folder (or upload it via the app after starting).
+
+  - Easiest: Double-click Start_App.bat (Windows) or Start_App.command (Mac). One window opens with the link; copy it (e.g. http://127.0.0.1:5000) and paste it in any browser or on another device. No browser is opened automatically.
+
+
+9. CONCLUSION
+--------------------------------------------------------------------------------
+This project delivers an integrated machine learning system for auto insurance claims: fraud detection (classification) and loss severity prediction (regression). The dataset insurance_claims_fraud.csv is cleaned and encoded; four classifiers (Random Forest, XGBoost, LightGBM, Gradient Boosting) are trained with SMOTE for fraud, and three regressors (Random Forest, XGBoost, LightGBM) for severity. The best models are selected by F1 and R² respectively and saved for use in a Flask web application. The web app provides a premium user experience: login and register with loading feedback, a dashboard with stats and model metrics, a claims list with search and sort (10 per page) and click-through to full claim detail, upload with clear "please wait" messaging, and predict with consistent Yes/No and dollar-amount output. Amounts are shown in dollars ($) and fraud as Yes or No throughout. The implementation is organized in a dedicated ML pipeline module and a thin app layer with template filters for consistent display, auto-install of dependencies, and a single saved artifact for prediction. The report has outlined the project from introduction through methodology, implementation, and conclusion for submission and presentation.
+
+================================================================================

@@ -1,0 +1,11 @@
+policy_id,insured_age,incident_type,collision_type,incident_severity,number_of_vehicles_involved,bodily_injuries,incident_date
+TEST001,35,Single Vehicle Collision,Front,Minor Damage,1,0,2024-01-15
+TEST002,42,Multi-vehicle Collision,Rear,Major Damage,2,1,2024-02-20
+TEST003,28,Vehicle Theft,Side,Total Loss,1,0,2024-03-10
+TEST004,55,Parked Car,Front,Minor Damage,1,0,2024-04-05
+TEST005,61,Parked Car,Rollover,Total Loss,1,2,2024-05-12
+TEST006,38,Single Vehicle Collision,Front,Minor Damage,1,0,2024-06-01
+TEST007,45,Multi-vehicle Collision,Rear,Major Damage,3,1,2024-06-18
+TEST008,22,Vehicle Theft,Side,Total Loss,1,0,2024-07-22
+TEST009,50,Parked Car,Front,Total Loss,1,0,2024-08-11
+TEST010,33,Single Vehicle Collision,Side,Minor Damage,1,1,2024-09-03

@@ -1,0 +1,15 @@
+Training summary (insurance_claims_fraud)
+==================================================
+Best fraud model: XGBoost
+Best severity model: Random Forest
+
+Fraud models (CV F1 = selection; Test = held-out):
+  Random Forest: CV_F1=0.8045, Test Acc=0.8824, F1=0.8219, Recall=0.9043, ROC-AUC=0.9660
+  XGBoost: CV_F1=0.9598, Test Acc=0.9856, F1=0.9765, Recall=0.9932, ROC-AUC=0.9984
+  LightGBM: CV_F1=0.8954, Test Acc=0.9419, F1=0.9085, Recall=0.9613, ROC-AUC=0.9898
+  Gradient Boosting: CV_F1=0.8603, Test Acc=0.9234, F1=0.8727, Recall=0.8747, ROC-AUC=0.9718
+
+Severity models (CV R² = selection; Test = held-out):
+  Random Forest: CV_R2=0.5437, Test MAE=$15576, R²=0.5176
+  XGBoost: CV_R2=0.4719, Test MAE=$16475, R²=0.4486
+  LightGBM: CV_R2=0.5373, Test MAE=$15498, R²=0.5112

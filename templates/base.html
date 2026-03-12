@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %} Auto Insurance Fraud Detection{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --bg-subtle: linear-gradient(160deg, #f0fdfa 0%, #f8fafc 50%, #f1f5f9 100%);
+            --surface: #ffffff;
+            --surface2: #f1f5f9;
+            --accent: #0d9488;
+            --accent2: #0f766e;
+            --accent-light: #ccfbf1;
+            --accent-glow: rgba(13, 148, 136, 0.15);
+            --success: #059669;
+            --warn: #d97706;
+            --danger: #dc2626;
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 20px rgba(0,0,0,0.08);
+            --shadow-lg: 0 10px 40px rgba(0,0,0,0.1);
+            --radius: 12px;
+            --radius-lg: 16px;
+            --transition: 0.2s ease;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-subtle);
+            background-attachment: fixed;
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        .navbar {
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(12px);
+            padding: 0.85rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .navbar a {
+            color: var(--text);
+            text-decoration: none;
+            padding: 0.5rem 0.9rem;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: background var(--transition), color var(--transition), transform 0.15s ease;
+        }
+        .navbar a:hover { background: var(--accent-light); color: var(--accent2); transform: translateY(-0.5px); }
+        .navbar .brand {
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--accent2);
+            letter-spacing: -0.02em;
+        }
+        .nav-links { display: flex; gap: 0.15rem; align-items: center; flex-wrap: wrap; }
+        .container { max-width: 1120px; margin: 0 auto; padding: 2rem; animation: fadeIn 0.35s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            padding: 1.6rem 1.9rem;
+            border: 1px solid var(--border);
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+            transition: box-shadow var(--transition), transform var(--transition);
+        }
+        .card:hover { box-shadow: var(--shadow-md); }
+        .card h2 {
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            font-size: 1.2rem;
+            color: var(--text);
+            letter-spacing: -0.01em;
+        }
+        .card .card-why {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+        .btn {
+            display: inline-block;
+            padding: 0.65rem 1.25rem;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+        .btn:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+        .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px var(--accent-glow); }
+        .btn-ghost {
+            background: var(--surface2);
+            color: var(--accent2);
+            border: 1px solid var(--accent);
+        }
+        .btn-ghost:hover { background: var(--accent-light); }
+        .form-group { margin-bottom: 1.1rem; }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.4rem;
+            color: var(--text);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+            font-size: 1rem;
+            transition: border-color var(--transition), box-shadow var(--transition);
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+        .alert {
+            padding: 1rem 1.25rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+        }
+        .alert-error { background: #fef2f2; color: var(--danger); border: 1px solid #fecaca; }
+        .alert-success { background: #f0fdf4; color: var(--success); border: 1px solid #bbf7d0; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th, td { padding: 0.7rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { color: var(--text-muted); font-weight: 600; background: var(--surface2); }
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1rem; }
+        .stat-box {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            transition: transform var(--transition), box-shadow var(--transition);
+        }
+        .stat-box:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+        .stat-box .value { font-size: 1.6rem; font-weight: 700; color: var(--accent2); letter-spacing: -0.02em; }
+        .stat-box .label { color: var(--text); font-weight: 500; font-size: 0.9rem; margin-top: 0.25rem; }
+        .stat-box .why { color: var(--text-muted); font-size: 0.75rem; margin-top: 0.4rem; }
+        .pagination { display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; }
+        .pagination a, .pagination span {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            background: var(--surface2);
+            color: var(--text);
+            text-decoration: none;
+            font-weight: 500;
+            transition: background var(--transition), color var(--transition);
+        }
+        .pagination a:hover { background: var(--accent); color: white; }
+        .pagination .current { background: var(--accent); color: white; }
+        .page-title { font-size: 1.6rem; font-weight: 700; color: var(--text); margin-bottom: 0.4rem; letter-spacing: -0.02em; }
+        .page-sub { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.5rem; }
+        .table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+        .claims-table tbody tr.clickable { cursor: pointer; transition: background 0.15s ease; }
+        .claims-table tbody tr.clickable:hover { background: var(--accent-light); }
+        .badge { display: inline-block; padding: 0.25rem 0.65rem; border-radius: 6px; font-weight: 600; font-size: 0.85rem; }
+        .badge-danger { background: #fef2f2; color: var(--danger); }
+        .badge-success { background: #f0fdf4; color: var(--success); }
+        .btn-small { padding: 0.35rem 0.7rem; font-size: 0.85rem; border-radius: 6px; background: var(--accent); color: white; text-decoration: none; font-weight: 500; transition: background var(--transition); }
+        .btn-small:hover { background: var(--accent2); color: white; }
+        .dollar { font-weight: 600; color: var(--accent2); }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% if session.get('user') %}
+    <nav class="navbar">
+        <a href="{{ url_for('dashboard') }}" class="brand">Insurance Fraud &amp; Severity</a>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('claims_list') }}">Claims</a>
+            <a href="{{ url_for('upload_dataset') }}">Upload</a>
+            <a href="{{ url_for('predict') }}">Predict</a>
+            <a href="{{ url_for('predict_severity') }}">Severity only</a>
+            <a href="{{ url_for('evaluation') }}">Evaluation</a>
+            <a href="{{ url_for('dataset') }}">Dataset</a>
+            <a href="{{ url_for('logout') }}" class="btn btn-ghost">Logout ({{ session.get('user') }})</a>
+        </div>
+    </nav>
+    {% endif %}
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+    {% if share_link and session.get('user') %}
+    <footer style="text-align:center; padding:1rem 2rem; color: var(--text-muted); font-size: 0.875rem; border-top: 1px solid var(--border); background: rgba(255,255,255,0.9);">
+        Copy this link to open on another device (same WiFi): <strong style="color: var(--accent2);">{{ share_link }}</strong>
+    </footer>
+    {% endif %}
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

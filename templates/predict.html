@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Predict - Fraud risk{% endblock %}
+{% block content %}
+<h1 class="page-title">Fraud risk assessment</h1>
+
+{% if error %}
+<div class="alert alert-error">{{ error }}</div>
+<p><a href="{{ url_for('upload_dataset') }}" style="color: var(--accent2); font-weight:600;">Upload dataset</a> first if you haven’t.</p>
+{% endif %}
+
+<div class="card" style="max-width: 540px;">
+    <h2>Claim details</h2>
+    <form method="post" action="{{ url_for('predict') }}" id="predict-form">
+        <div class="form-group">
+            <label for="age">Age</label>
+            <input type="number" id="age" name="age" min="18" max="100" value="{{ form_used.get('age') or request.form.get('age', 35) }}" placeholder="e.g. 35">
+        </div>
+        <div class="form-group">
+            <label for="incident_type">Incident type</label>
+            <select id="incident_type" name="incident_type">
+                {% for opt in ['Single Vehicle Collision', 'Multi-vehicle Collision', 'Vehicle Theft', 'Parked Car'] %}
+                <option value="{{ opt }}" {{ 'selected' if (form_used.get('incident_type') or request.form.get('incident_type', 'Single Vehicle Collision')) == opt else '' }}>{{ opt }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="collision_type">Collision type</label>
+            <select id="collision_type" name="collision_type">
+                {% for opt in ['Front Collision', 'Rear Collision', 'Side Collision', 'Rollover'] %}
+                <option value="{{ opt }}" {{ 'selected' if (form_used.get('collision_type') or request.form.get('collision_type', 'Front Collision')) == opt else '' }}>{{ opt }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="incident_severity">Incident severity</label>
+            <select id="incident_severity" name="incident_severity">
+                {% for opt in ['Minor Damage', 'Major Damage', 'Total Loss', 'Trivial Damage'] %}
+                <option value="{{ opt }}" {{ 'selected' if (form_used.get('incident_severity') or request.form.get('incident_severity', 'Minor Damage')) == opt else '' }}>{{ opt }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="number_of_vehicles_involved">Number of vehicles involved</label>
+            <input type="number" id="number_of_vehicles_involved" name="number_of_vehicles_involved" min="0" max="10" value="{{ form_used.get('number_of_vehicles_involved') or request.form.get('number_of_vehicles_involved', 1) }}">
+        </div>
+        <div class="form-group">
+            <label for="bodily_injuries">Bodily injuries</label>
+            <input type="number" id="bodily_injuries" name="bodily_injuries" min="0" max="10" value="{{ form_used.get('bodily_injuries') or request.form.get('bodily_injuries', 0) }}">
+        </div>
+        <button type="submit" class="btn btn-primary" id="predict-btn">Get assessment</button>
+    </form>
+</div>
+
+<div class="card" style="max-width: 540px; margin-top: 1.5rem;">
+    <h2>Score many claims (CSV)</h2>
+    <form method="post" action="{{ url_for('predict_batch') }}" enctype="multipart/form-data" id="batch-form">
+        <div class="form-group">
+            <label for="batch_csv">Claims CSV file</label>
+            <input type="file" id="batch_csv" name="batch_csv" accept=".csv" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Score and download CSV</button>
+    </form>
+</div>
+
+{% if fraud_result is not none and severity_result is not none %}
+<div class="card prediction-card" style="max-width: 560px; border-left: 4px solid var(--accent);">
+    <h2>Assessment result</h2>
+    {% if form_used %}
+    <p class="inputs-used">Inputs: Age <strong>{{ form_used.get('age', '-') }}</strong>, {{ form_used.get('incident_type', '-') }}, {{ form_used.get('collision_type', '-') }}, {{ form_used.get('incident_severity', '-') }}, vehicles: {{ form_used.get('number_of_vehicles_involved', '-') }}, bodily injuries: {{ form_used.get('bodily_injuries', '-') }}.</p>
+    {% endif %}
+    <div class="risk-row">
+        <span class="prediction-label">Fraud risk</span>
+        <span class="risk-badge risk-{{ (risk_level or 'low')|lower }}">{{ risk_level or 'Low' }}</span>
+        {% if fraud_prob is not none %}<span class="fraud-pct">{{ (fraud_prob * 100)|round(0)|int }}% probability of fraud</span>{% endif %}
+    </div>
+    <div class="recommendation-row">
+        <span class="prediction-label">Recommendation</span>
+        <p class="recommendation-text">{{ recommendation or 'No action recommended' }}</p>
+    </div>
+    <div class="prediction-row">
+        <span class="prediction-label">Predicted claim amount</span>
+        <span class="prediction-value dollar">{{ severity_result|dollar }}</span>
+    </div>
+</div>
+<style>
+    .inputs-used { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
+    .risk-row { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin: 1rem 0; padding: 0.75rem 0; border-bottom: 1px solid var(--border); }
+    .risk-badge { font-size: 1.25rem; font-weight: 700; padding: 0.35rem 0.75rem; border-radius: 8px; }
+    .risk-low { background: #d1fae5; color: #065f46; }
+    .risk-medium { background: #fef3c7; color: #92400e; }
+    .risk-high { background: #fee2e2; color: #991b1b; }
+    .fraud-pct { font-size: 0.9rem; color: var(--text-muted); }
+    .recommendation-row { margin: 1rem 0; padding: 0.75rem 0; border-bottom: 1px solid var(--border); }
+    .recommendation-text { margin: 0; font-size: 1.1rem; font-weight: 600; color: var(--text); }
+    .prediction-card .prediction-row { margin: 1rem 0; padding: 0.75rem 0; border-bottom: 1px solid var(--border); }
+    .prediction-card .prediction-row:last-of-type { border-bottom: none; }
+    .prediction-label { font-weight: 600; color: var(--text-muted); font-size: 0.9rem; display: block; margin-bottom: 0.25rem; }
+    .prediction-value { font-size: 1.4rem; font-weight: 700; }
+</style>
+{% endif %}
+{% endblock %}

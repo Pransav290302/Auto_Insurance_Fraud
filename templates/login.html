@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+    <div class="card auth-card">
+        <h2 class="auth-title">Welcome back</h2>
+        <p class="card-why">Sign in to access the Auto Insurance Fraud Detection</p>
+        {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+        {% endif %}
+        <form method="post" action="{{ url_for('login') }}" id="login-form">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" placeholder="e.g. admin" required autofocus>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block" id="login-btn">Sign in</button>
+        </form>
+        <p class="auth-footer"><a href="{{ url_for('register') }}" style="color: var(--accent2); font-weight:600;">Register</a></p>
+    </div>
+</div>
+<script>
+document.getElementById('login-form').addEventListener('submit', function() {
+    var btn = document.getElementById('login-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Signing in…'; }
+});
+</script>
+<style>
+    .auth-wrap { max-width: 420px; margin: 3rem auto; }
+    .auth-card { text-align: center; }
+    .auth-title { margin-bottom: 0.5rem; }
+    .btn-block { width: 100%; }
+    .auth-footer { margin-top: 1.25rem; font-size: 0.9rem; color: var(--text-muted); }
+</style>
+{% endblock %}

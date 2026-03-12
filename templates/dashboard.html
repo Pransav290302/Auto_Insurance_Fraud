@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h1 class="page-title">Dashboard</h1>
+{% if msg %}
+<div class="alert alert-success">{{ msg }}</div>
+{% endif %}
+
+{% if not data_ok %}
+<div class="alert alert-error"><strong>No dataset yet.</strong> <a href="{{ url_for('upload_dataset') }}" style="color: var(--accent2); font-weight:600;">Upload insurance_claims_fraud.csv</a> or place it in the project folder so Dashboard, Predict, and Dataset work.</div>
+{% endif %}
+
+<div class="card">
+    <h2>Your dataset at a glance</h2>
+    <div class="stat-grid">
+        <div class="stat-box">
+            <div class="value">{{ stats.total_claims|int }}</div>
+            <div class="label">Total claims</div>
+            <div class="why">Number of claim records in your file.</div>
+        </div>
+        <div class="stat-box">
+            <div class="value">{{ stats.fraud_count|int }}</div>
+            <div class="label">Fraud reported</div>
+            <div class="why">Claims marked as fraudulent in the data.</div>
+        </div>
+        <div class="stat-box">
+            <div class="value">{{ stats.legit_count|int }}</div>
+            <div class="label">Legitimate claims</div>
+            <div class="why">Claims not marked as fraud.</div>
+        </div>
+        <div class="stat-box">
+            <div class="value">{{ stats.avg_claim_amount|dollar }}</div>
+            <div class="label">Avg claim amount</div>
+            <div class="why">Average total claim amount.</div>
+        </div>
+        <div class="stat-box">
+            <div class="value">{{ stats.min_claim_amount|dollar }}</div>
+            <div class="label">Min claim</div>
+            <div class="why">Smallest total claim amount.</div>
+        </div>
+        <div class="stat-box">
+            <div class="value">{{ stats.max_claim_amount|dollar }}</div>
+            <div class="label">Max claim</div>
+            <div class="why">Largest total claim amount.</div>
+        </div>
+    </div>
+</div>
+
+{% if data_ok %}
+<div class="card">
+    <h2>Data visualization</h2>
+    <div class="chart-grid">
+        <div class="chart-box chart-wide">
+            <h3 style="font-size: 1rem; font-weight: 600; color: var(--text); margin-bottom: 0.75rem;">Fraud vs legitimate claims</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">Proportion of claims in your dataset.</p>
+            <canvas id="barFraudDist" height="200" data-legit="{{ stats.legit_count|int }}" data-fraud="{{ stats.fraud_count|int }}"></canvas>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if fraud_metrics and severity_metrics %}
+<div class="card">
+    <h2>How good are our models?</h2>
+    <p style="margin-bottom: 1rem; font-weight: 600; color: var(--accent2);">Best for fraud: {{ best_fraud_name }} &nbsp;|&nbsp; Best for amount: {{ best_severity_name }}</p>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+        <div>
+            <h3 style="font-size: 1rem; font-weight: 600; color: var(--text); margin-bottom: 0.5rem;">Fraud detection (is this claim fraud?)</h3>
+            <table>
+                <thead><tr><th>Model</th><th>Accuracy</th><th>F1</th><th>Recall</th><th>ROC-AUC</th></tr></thead>
+                <tbody>
+                {% for name, m in fraud_metrics.items() %}
+                <tr><td>{{ name }}</td><td>{{ "%.2f"|format(m.accuracy) }}</td><td>{{ "%.2f"|format(m.f1) }}</td><td>{{ "%.2f"|format(m.recall) }}</td><td>{{ "%.2f"|format(m.roc_auc) }}</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div>
+            <h3 style="font-size: 1rem; font-weight: 600; color: var(--text); margin-bottom: 0.5rem;">Severity prediction (expected claim amount $)</h3>
+            <table>
+                <thead><tr><th>Model</th><th>MAE ($)</th><th>RMSE ($)</th><th>R²</th></tr></thead>
+                <tbody>
+                {% for name, m in severity_metrics.items() %}
+                <tr><td>{{ name }}</td><td>{{ "%.0f"|format(m.mae) }}</td><td>{{ "%.0f"|format(m.rmse) }}</td><td>{{ "%.4f"|format(m.r2) }}</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if sample_claims %}
+<div class="card">
+    <h2>Claims at a glance</h2>
+    <div class="table-wrap">
+        <table class="claims-table">
+            <thead>
+                <tr>
+                    <th>Claim #</th>
+                    <th>Age</th>
+                    <th>Incident</th>
+                    <th>State</th>
+                    <th>Fraud</th>
+                    <th>Amount</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in sample_claims %}
+                <tr class="clickable" data-href="{{ url_for('claim_detail', idx=row._idx) }}" role="button" tabindex="0">
+                    <td><strong>{{ row.policy_number }}</strong></td>
+                    <td>{{ row.age }}</td>
+                    <td>{{ row.incident_type }}</td>
+                    <td>{{ row.incident_state if row.incident_state else row.policy_state }}</td>
+                    <td><span class="badge badge-{{ 'danger' if row.fraud_reported == 'Y' else 'success' }}">{{ row.fraud_reported|fraud_yes_no }}</span></td>
+                    <td class="dollar">{{ row.total_claim_amount|dollar }}</td>
+                    <td><a href="{{ url_for('claim_detail', idx=row._idx) }}" class="btn-small">Open</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <a href="{{ url_for('claims_list') }}" class="btn btn-primary" style="margin-top: 1rem;">View all claims (search &amp; sort)</a>
+</div>
+{% endif %}
+
+<div class="card">
+    <h2>What you can do next</h2>
+    <a href="{{ url_for('upload_dataset') }}" class="btn btn-primary">Upload dataset</a>
+    <a href="{{ url_for('claims_list') }}" class="btn btn-ghost" style="margin-left: 0.5rem;">Claims (search &amp; sort)</a>
+    <a href="{{ url_for('predict') }}" class="btn btn-ghost" style="margin-left: 0.5rem;">Predict fraud &amp; amount</a>
+    <a href="{{ url_for('dataset') }}" class="btn btn-ghost" style="margin-left: 0.5rem;">Raw dataset</a>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.chart-grid { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
+.chart-box { background: var(--surface2); border-radius: var(--radius); padding: 1.25rem; border: 1px solid var(--border); }
+.chart-box.chart-wide { max-width: 100%; }
+.dashboard-meta { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; }
+.dashboard-meta code { font-size: 0.8em; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+(function() {
+    var green = '#059669', red = '#dc2626';
+    var barDistCtx = document.getElementById('barFraudDist');
+    if (barDistCtx) {
+        var legit = parseInt(barDistCtx.getAttribute('data-legit') || '0', 10);
+        var fraud = parseInt(barDistCtx.getAttribute('data-fraud') || '0', 10);
+        new Chart(barDistCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Legitimate', 'Fraud'],
+                datasets: [{
+                    label: 'Claims',
+                    data: [legit, fraud],
+                    backgroundColor: [green, red],
+                    borderRadius: 8,
+                    barThickness: 60
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { afterLabel: function(ctx) { var t = ctx.raw; var tot = legit + fraud; return tot ? Math.round(t/tot*100) + '% of total' : ''; } } }
+                },
+                scales: {
+                    x: { beginAtZero: true, ticks: { precision: 0 } }
+                }
+            }
+        });
+    }
+    document.querySelectorAll('.claims-table tbody tr.clickable[data-href]').forEach(function(tr) {
+        tr.addEventListener('click', function() { window.location = this.getAttribute('data-href'); });
+        tr.addEventListener('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); window.location = this.getAttribute('data-href'); } });
+    });
+})();
+</script>
+{% endblock %}

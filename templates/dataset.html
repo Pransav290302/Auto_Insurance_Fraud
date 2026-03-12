@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Dataset{% endblock %}
+{% block content %}
+<h1 class="page-title">Dataset</h1>
+
+<div class="card" style="overflow-x: auto;">
+    {% if total > 0 %}
+    <table>
+        <thead>
+            <tr>
+                {% for col in columns %}
+                <th>{{ col }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in data %}
+            <tr>
+                {% for col in columns %}
+                <td>
+                    {% if col == 'total_claim_amount' or col == 'injury_claim' or col == 'property_claim' or col == 'vehicle_claim' or col == 'policy_annual_premium' or col == 'policy_deductable' %}
+                    {{ row[col]|dollar }}
+                    {% elif col == 'fraud_reported' %}
+                    {{ row[col]|fraud_yes_no }}
+                    {% else %}
+                    {{ row[col] }}
+                    {% endif %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="pagination">
+        {% if page > 1 %}
+        <a href="{{ url_for('dataset', page=page-1) }}">Previous</a>
+        {% endif %}
+        <span class="current">Page {{ page }} / {{ total_pages }}</span>
+        {% if page < total_pages %}
+        <a href="{{ url_for('dataset', page=page+1) }}">Next</a>
+        {% endif %}
+    </div>
+    {% else %}
+    <p style="color: var(--text-muted);">No data. <a href="{{ url_for('upload_dataset') }}" style="color: var(--accent2); font-weight:600;">Upload dataset</a> first.</p>
+    {% endif %}
+</div>
+{% endblock %}

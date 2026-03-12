@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Claims{% endblock %}
+{% block content %}
+<h1 class="page-title">Claims</h1>
+
+<div class="card">
+    <form method="get" action="{{ url_for('claims_list') }}" class="claims-toolbar">
+        <input type="hidden" name="sort" value="{{ sort }}">
+        <input type="hidden" name="order" value="{{ order }}">
+        <div class="toolbar-row">
+            <input type="text" name="q" value="{{ search }}" placeholder="Search by policy #, incident, state, city..." class="search-input">
+            <button type="submit" class="btn btn-primary">Search</button>
+            {% if search %}<a href="{{ url_for('claims_list', sort=sort, order=order) }}" class="btn btn-ghost">Clear</a>{% endif %}
+        </div>
+        <div class="sort-row">
+            <label>Sort by:</label>
+            <a href="{{ url_for('claims_list', q=search, sort='policy_number', order='asc') }}" class="sort-link {% if sort == 'policy_number' %}active{% endif %}">Claim #</a>
+            <a href="{{ url_for('claims_list', q=search, sort='age', order='desc') }}" class="sort-link {% if sort == 'age' %}active{% endif %}">Age</a>
+            <a href="{{ url_for('claims_list', q=search, sort='incident_type', order='asc') }}" class="sort-link {% if sort == 'incident_type' %}active{% endif %}">Incident</a>
+            <a href="{{ url_for('claims_list', q=search, sort='incident_state', order='asc') }}" class="sort-link {% if sort == 'incident_state' %}active{% endif %}">State</a>
+            <a href="{{ url_for('claims_list', q=search, sort='fraud_reported', order='desc') }}" class="sort-link {% if sort == 'fraud_reported' %}active{% endif %}">Fraud</a>
+            <a href="{{ url_for('claims_list', q=search, sort='total_claim_amount', order='desc') }}" class="sort-link {% if sort == 'total_claim_amount' %}active{% endif %}">Amount</a>
+        </div>
+    </form>
+
+    <p class="results-summary">Page <strong>{{ page }}</strong> of <strong>{{ total_pages }}</strong> - <strong>{{ total }}</strong> claim(s).</p>
+
+    {% if total > 0 %}
+    <div class="table-wrap">
+        <table class="claims-table">
+            <thead>
+                <tr>
+                    <th>Claim #</th>
+                    <th>Age</th>
+                    <th>Incident type</th>
+                    <th>State</th>
+                    <th>Fraud</th>
+                    <th>Total amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in data %}
+                <tr class="clickable" data-href="{{ url_for('claim_detail', idx=row._idx) }}" role="button" tabindex="0">
+                    <td><strong>{{ row.policy_number }}</strong></td>
+                    <td>{{ row.age }}</td>
+                    <td>{{ row.incident_type }}</td>
+                    <td>{{ row.incident_state if row.incident_state else row.policy_state }}</td>
+                    <td>
+                        <span class="badge badge-{{ 'danger' if row.fraud_reported == 'Y' else 'success' }}">{{ row.fraud_reported|fraud_yes_no }}</span>
+                    </td>
+                    <td class="dollar">{{ row.total_claim_amount|dollar }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="pagination">
+        {% if page > 1 %}
+        <a href="{{ url_for('claims_list', page=page-1, q=search, sort=sort, order=order) }}">Previous</a>
+        {% endif %}
+        <span class="current">Page {{ page }} / {{ total_pages }}</span>
+        {% if page < total_pages %}
+        <a href="{{ url_for('claims_list', page=page+1, q=search, sort=sort, order=order) }}">Next</a>
+        {% endif %}
+    </div>
+    {% else %}
+    <p class="no-data">No claims found. {% if search %}Try a different search.{% else %}<a href="{{ url_for('upload_dataset') }}">Upload dataset</a> first.{% endif %}</p>
+    {% endif %}
+</div>
+<style>
+    .claims-toolbar { margin-bottom: 1rem; }
+    .toolbar-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.75rem; }
+    .search-input { flex: 1; min-width: 200px; padding: 0.6rem 1rem; border-radius: 10px; border: 1px solid var(--border); font-size: 1rem; }
+    .sort-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; font-size: 0.9rem; }
+    .sort-row label { color: var(--text-muted); margin-right: 0.25rem; }
+    .sort-link { padding: 0.35rem 0.75rem; border-radius: 8px; background: var(--surface2); color: var(--text); text-decoration: none; font-weight: 500; }
+    .sort-link:hover { background: var(--accent-light); color: var(--accent2); }
+    .sort-link.active { background: var(--accent); color: white; }
+    .results-summary { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem; }
+    .table-wrap { overflow-x: auto; }
+    .claims-table { width: 100%; }
+    .claims-table tbody tr.clickable { cursor: pointer; transition: background 0.15s; }
+    .claims-table tbody tr.clickable:hover { background: var(--accent-light); }
+    .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 6px; font-weight: 600; font-size: 0.85rem; }
+    .badge-danger { background: #fef2f2; color: var(--danger); }
+    .badge-success { background: #f0fdf4; color: var(--success); }
+    .no-data { color: var(--text-muted); }
+</style>
+<script>
+document.querySelectorAll('.claims-table tbody tr.clickable[data-href]').forEach(function(tr) {
+    tr.addEventListener('click', function() { window.location = this.getAttribute('data-href'); });
+    tr.addEventListener('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); window.location = this.getAttribute('data-href'); } });
+});
+</script>
+{% endblock %}

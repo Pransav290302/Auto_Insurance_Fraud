@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}Evaluation - Fraud model{% endblock %}
+{% block content %}
+<h1 class="page-title">Model evaluation</h1>
+
+{% if error %}
+<div class="alert alert-error">{{ error }}</div>
+<p><a href="{{ url_for('upload_dataset') }}" style="color: var(--accent2); font-weight:600;">Upload dataset</a> or ensure models are trained (Dashboard) first.</p>
+{% else %}
+
+<div class="card" style="max-width: 720px;">
+    <h2>Fraud model: {{ best_fraud_name }}</h2>
+    <div class="stat-grid" style="margin-top: 1rem;">
+        <div class="stat-box">
+            <span class="value">{{ "%.2f"|format(accuracy) }}</span>
+            <span class="label">Accuracy</span>
+        </div>
+        <div class="stat-box">
+            <span class="value">{{ "%.2f"|format(precision) }}</span>
+            <span class="label">Precision</span>
+        </div>
+        <div class="stat-box">
+            <span class="value">{{ "%.2f"|format(recall) }}</span>
+            <span class="label">Recall</span>
+        </div>
+        <div class="stat-box">
+            <span class="value">{{ "%.2f"|format(f1) }}</span>
+            <span class="label">F1 score</span>
+        </div>
+        <div class="stat-box">
+            <span class="value">{{ "%.2f"|format(roc_auc) }}</span>
+            <span class="label">ROC-AUC</span>
+        </div>
+        <div class="stat-box">
+            <span class="value">{{ "%.2f"|format(avg_precision) }}</span>
+            <span class="label">Avg precision</span>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="max-width: 720px;">
+    <h2>Confusion matrix</h2>
+    <div class="eval-figure-wrap">
+        <img src="data:image/png;base64,{{ img_confusion_matrix }}" alt="Confusion matrix" class="eval-img">
+    </div>
+</div>
+
+<div class="card" style="max-width: 720px;">
+    <h2>ROC curve</h2>
+    <div class="eval-figure-wrap">
+        <img src="data:image/png;base64,{{ img_roc }}" alt="ROC curve" class="eval-img">
+    </div>
+</div>
+
+<div class="card" style="max-width: 720px;">
+    <h2>Precision–recall curve</h2>
+    <div class="eval-figure-wrap">
+        <img src="data:image/png;base64,{{ img_pr }}" alt="Precision-recall curve" class="eval-img">
+    </div>
+</div>
+
+{% if fraud_metrics or severity_metrics %}
+<div class="card" style="max-width: 900px;">
+    <h2>Model comparison</h2>
+    <div class="chart-grid" style="display: grid; grid-template-columns: 1fr; gap: 1.5rem; margin-top: 1rem;">
+        {% if fraud_metrics %}
+        <div class="chart-box chart-wide" style="background: var(--surface2); border-radius: var(--radius); padding: 1.25rem; border: 1px solid var(--border);">
+            <h3 style="font-size: 1rem; font-weight: 600; color: var(--text); margin-bottom: 0.75rem;">Fraud models - all metrics at once</h3>
+            <script type="application/json" id="eval-fraud-metrics">{{ fraud_metrics|tojson }}</script>
+            <canvas id="radarFraud" height="280"></canvas>
+        </div>
+        {% endif %}
+        {% if severity_metrics %}
+        <div class="chart-box chart-wide" style="background: var(--surface2); border-radius: var(--radius); padding: 1.25rem; border: 1px solid var(--border);">
+            <h3 style="font-size: 1rem; font-weight: 600; color: var(--text); margin-bottom: 0.75rem;">Severity models - MAE, RMSE, R²</h3>
+            <script type="application/json" id="eval-severity-metrics">{{ severity_metrics|tojson }}</script>
+            <canvas id="barSeverity" height="260"></canvas>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<style>
+    .eval-figure-wrap { margin-top: 0.75rem; text-align: center; }
+    .eval-img { max-width: 100%; height: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+</style>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if not error %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+(function() {
+    var modelColors = ['#0d9488', '#0f766e', '#14b8a6', '#2dd4bf'];
+    var teal = '#0d9488', tealDark = '#0f766e';
+
+    var fraudEl = document.getElementById('eval-fraud-metrics');
+    if (fraudEl) {
+        var radarCtx = document.getElementById('radarFraud');
+        if (radarCtx) {
+            var fraudData = JSON.parse(fraudEl.textContent);
+            var fraudNames = Object.keys(fraudData);
+            new Chart(radarCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['Accuracy', 'F1', 'Recall', 'ROC-AUC'],
+                    datasets: fraudNames.map(function(name, i) {
+                        return {
+                            label: name,
+                            data: [fraudData[name].accuracy, fraudData[name].f1, fraudData[name].recall, fraudData[name].roc_auc],
+                            backgroundColor: modelColors[i] + '33',
+                            borderColor: modelColors[i],
+                            borderWidth: 2,
+                            pointBackgroundColor: modelColors[i]
+                        };
+                    })
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: { r: { beginAtZero: true, max: 1 } },
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        }
+    }
+
+    var sevEl = document.getElementById('eval-severity-metrics');
+    if (sevEl) {
+        var barSevCtx = document.getElementById('barSeverity');
+        if (barSevCtx) {
+            var sevData = JSON.parse(sevEl.textContent);
+            var sevNames = Object.keys(sevData);
+            new Chart(barSevCtx, {
+                type: 'bar',
+                data: {
+                    labels: sevNames,
+                    datasets: [
+                        { label: 'R² (×100)', data: sevNames.map(function(n) { return Math.round(sevData[n].r2 * 1000) / 10; }), backgroundColor: teal, borderRadius: 6 },
+                        { label: 'MAE ($1000s)', data: sevNames.map(function(n) { return Math.round(sevData[n].mae / 100) / 10; }), backgroundColor: tealDark, borderRadius: 6 },
+                        { label: 'RMSE ($1000s)', data: sevNames.map(function(n) { return Math.round(sevData[n].rmse / 100) / 10; }), backgroundColor: '#14b8a6', borderRadius: 6 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: { legend: { position: 'top' } },
+                    scales: {
+                        y: { beginAtZero: true },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+    }
+})();
+</script>
+{% endif %}
+{% endblock %}

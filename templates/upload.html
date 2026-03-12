@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Upload{% endblock %}
+{% block content %}
+<h1 class="page-title">Upload vehicle claims dataset</h1>
+<p class="page-sub">Upload any <strong>CSV or Excel</strong> file with vehicle/insurance claims. The app will auto-detect columns or ask you to map them. Needs at least 200 rows.</p>
+
+{% if error %}
+<div class="alert alert-error">{{ error }}</div>
+{% endif %}
+
+{% if has_data %}
+<div class="alert alert-success">A dataset is already loaded. Upload a new file to replace it; models will retrain on next use.</div>
+{% else %}
+<div class="alert alert-error">No dataset yet. Upload a CSV or Excel file so Dashboard, Predict, and Claims work.</div>
+{% endif %}
+
+<div class="card" style="max-width: 520px;">
+    <h2>Choose file</h2>
+    <p class="card-why">Accepts <strong>.csv</strong>, <strong>.xlsx</strong>, <strong>.xls</strong>. Must have: a fraud column (Y/N or 0/1) and a claim amount column (numeric). Other columns (age, incident type, etc.) improve predictions.</p>
+    <form method="post" action="{{ url_for('upload_dataset') }}" enctype="multipart/form-data" id="upload-form">
+        <div class="form-group">
+            <label for="dataset">CSV or Excel file</label>
+            <input type="file" id="dataset" name="dataset" accept=".csv,.xlsx,.xls" required>
+        </div>
+        <button type="submit" class="btn btn-primary" id="upload-btn">Upload and update</button>
+        <p id="upload-status" class="upload-status" style="display:none; margin-top:1rem; font-weight:600; color: var(--accent2);">Uploading and processing your CSV. This may take a moment-please wait…</p>
+    </form>
+</div>
+
+<div class="card" style="max-width: 520px;">
+    <h2>What happens after upload</h2>
+    <p class="card-why">You will be redirected to the dashboard. Models retrain when you next use Predict or view stats.</p>
+    <ul style="color: var(--text-muted); margin-left: 1.25rem; font-size: 0.95rem;">
+        <li>Dashboard shows stats and model performance from your file.</li>
+        <li>Predict uses models trained on your file.</li>
+        <li>Copy the link in the footer to open the app on another device.</li>
+    </ul>
+</div>
+<script>
+document.getElementById('upload-form').addEventListener('submit', function() {
+    var btn = document.getElementById('upload-btn');
+    var status = document.getElementById('upload-status');
+    btn.disabled = true;
+    btn.textContent = 'Uploading…';
+    if (status) status.style.display = 'block';
+});
+</script>
+{% endblock %}

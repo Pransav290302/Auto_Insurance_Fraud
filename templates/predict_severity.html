@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Predict - Severity only{% endblock %}
+{% block content %}
+<h1 class="page-title">Claim amount prediction</h1>
+
+{% if error %}
+<div class="alert alert-error">{{ error }}</div>
+<p><a href="{{ url_for('upload_dataset') }}" style="color: var(--accent2); font-weight:600;">Upload dataset</a> first if you haven’t.</p>
+{% endif %}
+
+<div class="card" style="max-width: 540px;">
+    <h2>Claim details</h2>
+    <form method="post" action="{{ url_for('predict_severity') }}" id="predict-severity-form">
+        <div class="form-group">
+            <label for="age">Age</label>
+            <input type="number" id="age" name="age" min="18" max="100" value="{{ form_used.get('age') or request.form.get('age', 35) }}" placeholder="e.g. 35">
+        </div>
+        <div class="form-group">
+            <label for="incident_type">Incident type</label>
+            <select id="incident_type" name="incident_type">
+                {% for opt in ['Single Vehicle Collision', 'Multi-vehicle Collision', 'Vehicle Theft', 'Parked Car'] %}
+                <option value="{{ opt }}" {{ 'selected' if (form_used.get('incident_type') or request.form.get('incident_type', 'Single Vehicle Collision')) == opt else '' }}>{{ opt }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="collision_type">Collision type</label>
+            <select id="collision_type" name="collision_type">
+                {% for opt in ['Front Collision', 'Rear Collision', 'Side Collision', 'Rollover'] %}
+                <option value="{{ opt }}" {{ 'selected' if (form_used.get('collision_type') or request.form.get('collision_type', 'Front Collision')) == opt else '' }}>{{ opt }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="incident_severity">Incident severity</label>
+            <select id="incident_severity" name="incident_severity">
+                {% for opt in ['Minor Damage', 'Major Damage', 'Total Loss', 'Trivial Damage'] %}
+                <option value="{{ opt }}" {{ 'selected' if (form_used.get('incident_severity') or request.form.get('incident_severity', 'Minor Damage')) == opt else '' }}>{{ opt }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="number_of_vehicles_involved">Number of vehicles involved</label>
+            <input type="number" id="number_of_vehicles_involved" name="number_of_vehicles_involved" min="0" max="10" value="{{ form_used.get('number_of_vehicles_involved') or request.form.get('number_of_vehicles_involved', 1) }}">
+        </div>
+        <div class="form-group">
+            <label for="bodily_injuries">Bodily injuries</label>
+            <input type="number" id="bodily_injuries" name="bodily_injuries" min="0" max="10" value="{{ form_used.get('bodily_injuries') or request.form.get('bodily_injuries', 0) }}">
+        </div>
+        <button type="submit" class="btn btn-primary">Predict amount</button>
+    </form>
+</div>
+
+{% if severity_result is not none %}
+<div class="card prediction-card" style="max-width: 560px; border-left: 4px solid var(--accent);">
+    <h2>Predicted claim amount</h2>
+    {% if form_used %}
+    <p class="inputs-used">Inputs: Age <strong>{{ form_used.get('age', '-') }}</strong>, {{ form_used.get('incident_type', '-') }}, {{ form_used.get('collision_type', '-') }}, {{ form_used.get('incident_severity', '-') }}, vehicles: {{ form_used.get('number_of_vehicles_involved', '-') }}, bodily injuries: {{ form_used.get('bodily_injuries', '-') }}.</p>
+    {% endif %}
+    <div class="prediction-row">
+        <span class="prediction-label">Estimated amount</span>
+        <span class="prediction-value dollar">{{ severity_result|dollar }}</span>
+    </div>
+    <p class="card-why">This estimate comes from the trained severity model (Random Forest) on your dataset. It uses a log-scale model internally and converts back to dollars.</p>
+</div>
+<style>
+    .inputs-used { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
+    .prediction-card .prediction-row { margin: 1rem 0; padding: 0.75rem 0; border-bottom: 1px solid var(--border); }
+    .prediction-card .prediction-row:last-of-type { border-bottom: none; }
+    .prediction-label { font-weight: 600; color: var(--text-muted); font-size: 0.9rem; display: block; margin-bottom: 0.25rem; }
+    .prediction-value { font-size: 1.4rem; font-weight: 700; }
+</style>
+{% endif %}
+{% endblock %}
+
