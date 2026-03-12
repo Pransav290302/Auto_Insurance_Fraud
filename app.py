@@ -92,7 +92,6 @@ except ModuleNotFoundError as e:
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'insurance-fraud-app-2024')
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-init_db()
 
 @app.template_filter('dollar')
 def dollar_filter(v):
@@ -306,6 +305,7 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     error = None
+    init_db()
     if request.method == 'POST':
         u = check_user(request.form.get('username', '').strip(), request.form.get('password', ''))
         if u:
