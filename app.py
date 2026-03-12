@@ -93,6 +93,11 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'insurance-fraud-app-2024')
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+
+@app.before_first_request
+def _init_db_if_needed():
+    init_db()
+
 @app.template_filter('dollar')
 def dollar_filter(v):
     try:
